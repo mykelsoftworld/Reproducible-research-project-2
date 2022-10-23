@@ -1,0 +1,262 @@
+---
+title: "project 2"
+author: "Michael"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## import relevant R library
+the following R library shall be imported for processing and analysis of data and setting working directory
+```{r}
+setwd("./")
+path<-"./"
+if(!require("tidyverse")){
+  install.packages("tidyverse")
+  library(tidyverse)
+}
+if(!require("tidyr")){
+  install.packages("tidyr")
+  library(tidyr)
+}
+
+if(!require("dplyr")){
+  install.packages("dplyr")
+  library(dplyr)
+}
+
+if(!require("ggplot2")){
+  install.packages("ggplot2")
+  library(ggplot2)
+}
+
+if(!require("chron")){
+  install.packages("chron")
+  library(chron)
+}
+
+if(!require("MASS")){
+  install.packages("MASS")
+  library(MASS)
+}
+
+if(!require("reshape2")){
+  install.packages("reshape2")
+  library(reshape2)
+}
+if(!require("reshape")){
+  install.packages("reshape")
+  library(reshape)
+}
+
+```
+## Data processing
+### Importing data set
+
+the dataset was downloaded from the url [download dataset][1],and imported using relevant R library
+
+```{r,results='hide'}
+
+url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+if (!(file.exists("./Storm data.csv")))
+{ download.file(url = url,
+              destfile = paste(path, "Storm Data.csv", sep = "/"))}
+if (!file.exists("./Storm Data.csv"))
+{unzip(zipfile  = "Storm Data.zip")}
+              
+data<-read.csv("./Storm Data.csv")
+head(data,n=6)
+```
+
+### selecting relevant data variable
+```{r}
+req_data <-data%>%select(c("EVTYPE","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP"))
+#only use data where where fatalities and injury occurred
+req_data<-req_data[(req_data$EVTYPE != "?" & 
+             (req_data$INJURIES > 0 | req_data$FATALITIES > 0 | req_data$PROPDMG > 0 | req_data$CROPDMG > 0)), ]
+```
+
+### Making the PROPDMGEXP and CROPDMGEXP columns cleaner so they can be used to calculate property and crop damage cost.
+```{r CorrectingExponents, results="hide"}
+# Change all damage exponents to uppercase.
+cols <- c("PROPDMGEXP", "CROPDMGEXP")
+
+# Map property damage alphanumeric exponents to numeric values.
+propdmgexp <- as.character(req_data[,"PROPDMGEXP"])
+unique_propexp <- unique(propdmgexp)
+cropdmgexp <- as.character(req_data[,"CROPDMGEXP"])
+unique_Cropexp <- unique(cropdmgexp)
+propDmgKey <-  c("\"\"" = 10^0,
+                 "-" = 10^0, 
+                 "+" = 10^0,
+                 "0" = 10^0,
+                 "1" = 10^1,
+                 "2" = 10^2,
+                 "3" = 10^3,
+                 "4" = 10^4,
+                 "5" = 10^5,
+                 "6" = 10^6,
+                 "7" = 10^7,
+                 "8" = 10^8,
+                 "9" = 10^9,
+                 "H" = 10^2,
+                 "K" = 10^3,
+                 "M" = 10^6,
+                 "B" = 10^9)
+# Map crop damage alphanumeric exponents to numeric values
+cropDmgKey <-  c("\"\"" = 10^0,
+                "?" = 10^0, 
+                "0" = 10^0,
+                "K" = 10^3,
+                "M" = 10^6,
+                "B" = 10^9)
+
+propDmgKey_transformed <- propDmgKey[propdmgexp]
+class(propDmgKey_transformed)
+class(propDmgKey)
+
+cropDmgKey_transformed <- cropDmgKey[cropdmgexp]
+req_data <- mutate(req_data,PROPDMGEXP = propDmgKey_transformed)
+req_data$PROPDMGEXP[is.na(req_data$PROPDMGEXP)] = 10^0 #replacing all na values in PROPDMGEXP column with 10^0
+req_data[is.na(req_data$PROPDMGEXP),"PROPDMGEXP"]       # verify that all na values in the PROPDMGEXP column have been replaced
+
+req_data <- mutate(req_data,CROPDMGEXP = cropDmgKey_transformed)
+req_data$CROPDMGEXP[is.na(req_data$CROPDMGEXP)] = 10^0
+req_data[is.na(req_data$CROPDMGEXP),"CROPDMGEXP"]
+
+```
+
+### 2.5: Making Economic Cost Columns
+
+```{r }
+req_data <- mutate(req_data,propCost = PROPDMG * PROPDMGEXP, cropCost = CROPDMG * CROPDMGEXP,Total_Cost = (propCost + cropCost))
+```
+
+
+## grouping data by event types and summarising the data
+```{r }
+table_1<- req_data %>%
+  group_by(EVTYPE) %>%
+  summarise(FATALITIES = sum(FATALITIES),INJURIES = sum(INJURIES), PROPERTY_DAMAGES = sum(propCost), CROP_DAMAGES = sum(cropCost),Total_Cost = sum(Total_Cost), .groups = 'drop') %>%
+  arrange(EVTYPE)%>%
+  print(n=30)
+# creating different table ordered by different session and selecting the top 20
+
+table_fat<- table_1[order(-table_1$FATALITIES), ]
+table_fat<-table_fat[1:20,]
+table_inj<- table_1[order(-table_1$INJURIES), ]
+table_inj<-table_inj[1:20,]
+table_propdmg <- table_1[order(-table_1$PROPERTY_DAMAGES), ]
+table_propdmg<-table_propdmg[1:20,]
+table_cropdmg <- table_1[order(-table_1$CROP_DAMAGES), ]
+table_cropdmg<-table_cropdmg[1:20,]
+table_total <- table_1[order(-table_1$Total_Cost), ]
+table_total<-table_total[1:20,]
+```
+
+### 3.1: Events that are Most Harmful to Population Health
+
+
+## Including Plots
+### chart for top 20 events causing the most fatalities
+You can also embed plots, for example:
+```{r fatalityChart}
+png("fatality.png")
+# Create chart
+fatalityChart <- ggplot(table_fat, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
+# Plot data as bar chart
+fatalityChart = fatalityChart + geom_bar(stat="identity", aes(fill=EVTYPE), position="dodge")
+# Format y-axis scale and set y-axis label
+fatalityChart = fatalityChart + ylab("Frequency Count") 
+# Set x-axis label
+fatalityChart = fatalityChart + xlab("Event Type") 
+# Rotate x-axis tick labels 
+fatalityChart = fatalityChart + theme(axis.text.x = element_text(angle=45, hjust=1))
+# Set chart title and center it
+fatalityChart = fatalityChart + ggtitle("Top 20 US Killers") + theme(plot.title = element_text(hjust = 0.5))
+fatalityChart
+dev.off()
+```
+### chart for top 20 events causing the most injuries
+You can also embed plots, for example:
+```{r injuryChart}
+# Create chart 
+png("injury.png")
+injuryChart <- ggplot(table_inj, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
+# Plot data as bar chart
+injuryChart = injuryChart + geom_bar(stat="identity", aes(fill=EVTYPE), position="dodge")
+# Format y-axis scale and set y-axis label
+injuryChart = injuryChart + ylab("Frequency Count") 
+# Set x-axis label
+injuryChart = injuryChart + xlab("Event Type") 
+# Rotate x-axis tick labels 
+injuryChart = injuryChart + theme(axis.text.x = element_text(angle=45, hjust=1))
+# Set chart title and center it
+injuryChart = injuryChart + ggtitle("Top 20 US Injuries") + theme(plot.title = element_text(hjust = 0.5))
+injuryChart
+dev.off()
+```
+### chart for top 20 events causing the most property damages
+You can also embed plots, for example:
+```{r propDmgChart}
+# Create chart
+png("propdmg.png")
+propDmgChart <- ggplot(table_propdmg, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
+# Plot data as bar chart
+propDmgChart = propDmgChart + geom_bar(stat="identity", aes(fill=EVTYPE), position="dodge")
+# Format y-axis scale and set y-axis label
+propDmgChart = propDmgChart + ylab("Frequency Count") 
+# Set x-axis label
+propDmgChart = propDmgChart + xlab("Event Type") 
+# Rotate x-axis tick labels 
+propDmgChart = propDmgChart + theme(axis.text.x = element_text(angle=45, hjust=1))
+# Set chart title and center it
+propDmgChart = propDmgChart + ggtitle("Top 20 US events causing property damages") + theme(plot.title = element_text(hjust = 0.5))
+propDmgChart
+dev.off()
+```
+### chart for top 20 events causing the most crop damages
+You can also embed plots, for example:
+```{r cropDmgChart}
+# Create chart
+png("cropdmg.png")
+cropDmgChart <- ggplot(table_cropdmg, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
+# Plot data as bar chart
+cropDmgChart = cropDmgChart + geom_bar(stat="identity", aes(fill=EVTYPE), position="dodge")
+# Format y-axis scale and set y-axis label
+cropDmgChart = cropDmgChart + ylab("Frequency Count") 
+# Set x-axis label
+cropDmgChart = cropDmgChart + xlab("Event Type") 
+# Rotate x-axis tick labels 
+cropDmgChart = cropDmgChart + theme(axis.text.x = element_text(angle=45, hjust=1))
+# Set chart title and center it
+cropDmgChart = cropDmgChart + ggtitle("Top 10 US Killers") + theme(plot.title = element_text(hjust = 0.5))
+cropDmgChart
+dev.off()
+
+```
+
+### chart for top 20 events causing the most total economic damages
+You can also embed plots, for example:
+```{r totalDmgChart}
+# Create chart
+png("totaldmg.png")
+totalDmgChart <- ggplot(table_total, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
+# Plot data as bar chart
+totalDmgChart = totalDmgChart + geom_bar(stat="identity", aes(fill=EVTYPE), position="dodge")
+# Format y-axis scale and set y-axis label
+totalDmgChart = totalDmgChart + ylab("Frequency Count") 
+# Set x-axis label
+totalDmgChart = totalDmgChart + xlab("Event Type") 
+# Rotate x-axis tick labels 
+totalDmgChart = totalDmgChart + theme(axis.text.x = element_text(angle=45, hjust=1))
+# Set chart title and center it
+totalDmgChart = totalDmgChart + ggtitle("Top 20 US events causing the economic damages") + theme(plot.title = element_text(hjust = 0.5))
+totalDmgChart
+dev.off()
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
