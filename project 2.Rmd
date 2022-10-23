@@ -1,5 +1,5 @@
 ---
-title: "project 2"
+title: "projec 2 an Analysis of the Adverse Health and Economic Impacts of US Storms"
 author: "Michael"
 date: "`r Sys.Date()`"
 output: html_document
