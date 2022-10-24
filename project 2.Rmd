@@ -43,24 +43,24 @@ if(!require("ggplot2")){
   library(ggplot2)
 }
 
-if(!require("chron")){
-  install.packages("chron")
-  library(chron)
-}
-
-if(!require("MASS")){
-  install.packages("MASS")
-  library(MASS)
-}
-
-if(!require("reshape2")){
-  install.packages("reshape2")
-  library(reshape2)
-}
-if(!require("reshape")){
-  install.packages("reshape")
-  library(reshape)
-}
+# if(!require("chron")){
+#   install.packages("chron")
+#   library(chron)
+# }
+# 
+# if(!require("MASS")){
+#   install.packages("MASS")
+#   library(MASS)
+# }
+# 
+# if(!require("reshape2")){
+#   install.packages("reshape2")
+#   library(reshape2)
+# }
+# if(!require("reshape")){
+#   install.packages("reshape")
+#   library(reshape)
+# }
 
 ```
 ## Data processing
@@ -83,7 +83,7 @@ head(data,n=6)
 
 ### selecting relevant data variable
 ```{r}
-req_data <-data%>%select(c("EVTYPE","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP"))
+req_data <- data%>%select(c("EVTYPE","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP"))
 #only use data where where fatalities and injury occurred
 req_data<-req_data[(req_data$EVTYPE != "?" & 
              (req_data$INJURIES > 0 | req_data$FATALITIES > 0 | req_data$PROPDMG > 0 | req_data$CROPDMG > 0)), ]
@@ -174,7 +174,7 @@ table_total<-table_total[1:20,]
 ### chart for top 20 events causing the most fatalities
 You can also embed plots, for example:
 ```{r fatalityChart}
-png("fatality.png")
+#png("fatality.png")
 # Create chart
 fatalityChart <- ggplot(table_fat, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
 # Plot data as bar chart
@@ -188,13 +188,13 @@ fatalityChart = fatalityChart + theme(axis.text.x = element_text(angle=45, hjust
 # Set chart title and center it
 fatalityChart = fatalityChart + ggtitle("Top 20 US Killers") + theme(plot.title = element_text(hjust = 0.5))
 fatalityChart
-dev.off()
+#dev.off()
 ```
 ### chart for top 20 events causing the most injuries
 You can also embed plots, for example:
 ```{r injuryChart}
 # Create chart 
-png("injury.png")
+#png("injury.png")
 injuryChart <- ggplot(table_inj, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
 # Plot data as bar chart
 injuryChart = injuryChart + geom_bar(stat="identity", aes(fill=EVTYPE), position="dodge")
@@ -207,13 +207,13 @@ injuryChart = injuryChart + theme(axis.text.x = element_text(angle=45, hjust=1))
 # Set chart title and center it
 injuryChart = injuryChart + ggtitle("Top 20 US Injuries") + theme(plot.title = element_text(hjust = 0.5))
 injuryChart
-dev.off()
+#dev.off()
 ```
 ### chart for top 20 events causing the most property damages
 You can also embed plots, for example:
 ```{r propDmgChart}
 # Create chart
-png("propdmg.png")
+#png("propdmg.png")
 propDmgChart <- ggplot(table_propdmg, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
 # Plot data as bar chart
 propDmgChart = propDmgChart + geom_bar(stat="identity", aes(fill=EVTYPE), position="dodge")
@@ -226,13 +226,13 @@ propDmgChart = propDmgChart + theme(axis.text.x = element_text(angle=45, hjust=1
 # Set chart title and center it
 propDmgChart = propDmgChart + ggtitle("Top 20 US events causing property damages") + theme(plot.title = element_text(hjust = 0.5))
 propDmgChart
-dev.off()
+#dev.off()
 ```
 ### chart for top 20 events causing the most crop damages
 You can also embed plots, for example:
 ```{r cropDmgChart}
 # Create chart
-png("cropdmg.png")
+#png("cropdmg.png")
 cropDmgChart <- ggplot(table_cropdmg, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
 # Plot data as bar chart
 cropDmgChart = cropDmgChart + geom_bar(stat="identity", aes(fill=EVTYPE), position="dodge")
@@ -245,7 +245,7 @@ cropDmgChart = cropDmgChart + theme(axis.text.x = element_text(angle=45, hjust=1
 # Set chart title and center it
 cropDmgChart = cropDmgChart + ggtitle("Top 10 US Killers") + theme(plot.title = element_text(hjust = 0.5))
 cropDmgChart
-dev.off()
+#dev.off()
 
 ```
 
@@ -253,7 +253,7 @@ dev.off()
 You can also embed plots, for example:
 ```{r totalDmgChart}
 # Create chart
-png("totaldmg.png")
+#png("totaldmg.png")
 totalDmgChart <- ggplot(table_total, aes(x=EVTYPE, y=PROPERTY_DAMAGES))
 # Plot data as bar chart
 totalDmgChart = totalDmgChart + geom_bar(stat="identity", aes(fill=EVTYPE), position="dodge")
@@ -266,7 +266,7 @@ totalDmgChart = totalDmgChart + theme(axis.text.x = element_text(angle=45, hjust
 # Set chart title and center it
 totalDmgChart = totalDmgChart + ggtitle("Top 20 US events causing the economic damages") + theme(plot.title = element_text(hjust = 0.5))
 totalDmgChart
-dev.off()
+#dev.off()
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
